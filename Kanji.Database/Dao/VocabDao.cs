@@ -8,6 +8,7 @@ using Kanji.Database.Entities;
 using Kanji.Database.EntityBuilders;
 using Kanji.Database.Helpers;
 using Kanji.Database.Extensions;
+using System.Threading.Tasks;
 
 namespace Kanji.Database.Dao
 {
@@ -450,24 +451,34 @@ namespace Kanji.Database.Dao
                       SqlHelper.Table_Vocab,
                       sqlFilterClauses,
                       sortClause),
-                    parameters.ToArray());
+                    parameters.ToArray()).ToList();
 
-                VocabBuilder vocabBuilder = new VocabBuilder();
-                foreach (NameValueCollection nvcVocab in vocabs)
+                var filtered = new List<VocabEntity>();
+
+                Task.WaitAll(vocabs.Select(v =>
                 {
-                    VocabEntity vocab = vocabBuilder.BuildEntity(nvcVocab, null);
-                    IncludeCategories(connection, vocab);
-                    IncludeMeanings(connection, vocab);
-                    IncludeKanji(connection, srsConnection, vocab);
-                    IncludeSrsEntries(srsConnection, vocab);
-                    if (isExplore && vocab.SrsEntries.Any())
+                    var task = new Task(() =>
                     {
-                        // Do not list items that are already in SRS
-                        continue;
-                    }
-                    IncludeVariants(connection, vocab);
-                    yield return vocab;
-                }
+                        VocabBuilder vocabBuilder = new VocabBuilder();
+                        VocabEntity vocab = vocabBuilder.BuildEntity(v, null);
+                        IncludeCategories(connection, vocab);
+                        IncludeMeanings(connection, vocab);
+                        IncludeKanji(connection, srsConnection, vocab);
+                        IncludeSrsEntries(srsConnection, vocab);
+                        if (!(isExplore && vocab.SrsEntries.Any()))
+                        {
+                            IncludeVariants(connection, vocab);
+                            filtered.Add(vocab);
+                        }
+                    });
+                    task.Start();
+                    return task;
+                }).ToArray());
+
+                filtered.Sort((v1, v2) => v1.WikipediaRank.GetValueOrDefault().CompareTo(v2.WikipediaRank));
+
+                foreach (var f in filtered)
+                    yield return f;
             }
             finally
             {
