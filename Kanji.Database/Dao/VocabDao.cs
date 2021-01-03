@@ -13,6 +13,40 @@ namespace Kanji.Database.Dao
 {
     public class VocabDao : Dao
     {
+        public IList<VocabEntity> _entireVocab;
+
+        public IEnumerable<VocabEntity> GetFilteredVocabPerformanceMode(KanjiEntity kanji,
+            string readingFilter, string meaningFilter, VocabCategory categoryFilter,
+            int jlptLevel, int wkLevel,
+            bool isCommonFirst, bool isShortWritingFirst)
+        {
+            if (_entireVocab == null)
+                _entireVocab = GetFilteredVocab(kanji, readingFilter, meaningFilter, categoryFilter, jlptLevel, 
+                    wkLevel, isCommonFirst, isShortWritingFirst, true).ToList();
+            DaoConnection srsConnection = null;
+            try
+            {
+                srsConnection = new DaoConnection(DaoConnectionEnum.SrsDatabase);
+                srsConnection.OpenAsync();
+                foreach (var vocab in _entireVocab)
+                {
+                    IncludeSrsEntries(srsConnection, vocab);
+                    if (!vocab.SrsEntries.Any())
+                    {
+                        yield return vocab;
+                    }
+                    
+                }
+            }
+            finally
+            {
+                if (srsConnection != null)
+                    srsConnection.Dispose();
+            }
+            
+            
+        }
+
         #region Fields
 
         private DaoConnection _connection = null;
@@ -441,6 +475,8 @@ namespace Kanji.Database.Dao
                 {
                     connection.Dispose();
                 }
+                if (srsConnection != null)
+                    srsConnection.Dispose();
             }
         }
 
@@ -822,6 +858,7 @@ namespace Kanji.Database.Dao
         /// </summary>
         private void IncludeSrsEntries(DaoConnection connection, VocabEntity vocab)
         {
+            vocab.SrsEntries = new List<SrsEntry>();
             string value = string.IsNullOrEmpty(vocab.KanjiWriting) ?
                 vocab.KanaWriting
                 : vocab.KanjiWriting;

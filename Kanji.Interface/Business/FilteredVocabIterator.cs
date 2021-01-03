@@ -38,14 +38,24 @@ namespace Kanji.Interface.Business
         protected override IEnumerable<VocabEntity> DoFilter()
         {
             VocabFilter filter = (VocabFilter)_currentFilter;
-            IEnumerable<VocabEntity> vocabs = _vocabDao.GetFilteredVocab(
-                    filter.Kanji.FirstOrDefault(),
-                    filter.ReadingString, filter.MeaningString,
-                    filter.Category, filter.JlptLevel, filter.WkLevel,
-                    filter.IsCommonFirst, filter.IsShortReadingFirst, Filter.IsEmpty());
-            foreach (VocabEntity vocab in vocabs)
+            if (Filter.IsEmpty())
             {
-                yield return vocab;
+                foreach (var vocab in _vocabDao.GetFilteredVocabPerformanceMode(filter.Kanji.FirstOrDefault(),
+                        filter.ReadingString, filter.MeaningString,
+                        filter.Category, filter.JlptLevel, filter.WkLevel,
+                        filter.IsCommonFirst, filter.IsShortReadingFirst))
+                    yield return vocab;
+            }
+            else 
+            { 
+                foreach (VocabEntity vocab in _vocabDao.GetFilteredVocab(
+                        filter.Kanji.FirstOrDefault(),
+                        filter.ReadingString, filter.MeaningString,
+                        filter.Category, filter.JlptLevel, filter.WkLevel,
+                        filter.IsCommonFirst, filter.IsShortReadingFirst))
+                {
+                    yield return vocab;
+                }
             }
 
             yield break;
