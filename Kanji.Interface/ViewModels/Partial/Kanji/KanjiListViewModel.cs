@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GalaSoft.MvvmLight.Command;
+using Kanji.Database.Dao;
 using Kanji.Database.Entities;
 using Kanji.Interface.Business;
 using Kanji.Interface.Models;

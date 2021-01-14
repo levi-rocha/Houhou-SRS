@@ -24,28 +24,15 @@ namespace Kanji.Database.Dao
             if (_entireVocab == null)
                 _entireVocab = GetFilteredVocab(kanji, readingFilter, meaningFilter, categoryFilter, jlptLevel, 
                     wkLevel, isCommonFirst, isShortWritingFirst, true).ToList();
-            DaoConnection srsConnection = null;
-            try
+            var srsEntries = new SrsEntryDao().GetFilteredItems(new Models.FilterClause[] { });
+            foreach (var vocab in _entireVocab)
             {
-                srsConnection = new DaoConnection(DaoConnectionEnum.SrsDatabase);
-                srsConnection.OpenAsync();
-                foreach (var vocab in _entireVocab)
-                {
-                    IncludeSrsEntries(srsConnection, vocab);
-                    if (!vocab.SrsEntries.Any())
-                    {
-                        yield return vocab;
-                    }
-                    
-                }
+                string value = string.IsNullOrEmpty(vocab.KanjiWriting) ?
+                vocab.KanaWriting
+                : vocab.KanjiWriting;
+                if (!srsEntries.Any(e => e.AssociatedVocab == value))
+                    yield return vocab;
             }
-            finally
-            {
-                if (srsConnection != null)
-                    srsConnection.Dispose();
-            }
-            
-            
         }
 
         #region Fields
@@ -415,7 +402,7 @@ namespace Kanji.Database.Dao
         public IEnumerable<VocabEntity> GetFilteredVocab(KanjiEntity kanji,
             string readingFilter, string meaningFilter, VocabCategory categoryFilter,
             int jlptLevel, int wkLevel,
-            bool isCommonFirst, bool isShortWritingFirst, bool isExplore = false)
+            bool isCommonFirst, bool isShortWritingFirst, bool isExplore = false, bool wikiOnly = false)
         {
             List<DaoParameter> parameters = new List<DaoParameter>();
             string sqlFilterClauses = BuildVocabFilterClauses(parameters, kanji,
@@ -453,32 +440,52 @@ namespace Kanji.Database.Dao
                       sortClause),
                     parameters.ToArray()).ToList();
 
-                var filtered = new List<VocabEntity>();
+                var associatedVocabs = new SrsEntryDao().GetFilteredItems(new Models.FilterClause[] { }).Select(e => e.AssociatedVocab).Where(a => a != null).Distinct().ToArray();
 
-                Task.WaitAll(vocabs.Select(v =>
+                foreach (var v in vocabs)
                 {
-                    var task = new Task(() =>
-                    {
-                        VocabBuilder vocabBuilder = new VocabBuilder();
-                        VocabEntity vocab = vocabBuilder.BuildEntity(v, null);
-                        IncludeCategories(connection, vocab);
-                        IncludeMeanings(connection, vocab);
-                        IncludeKanji(connection, srsConnection, vocab);
-                        IncludeSrsEntries(srsConnection, vocab);
-                        if (!(isExplore && vocab.SrsEntries.Any()))
-                        {
-                            IncludeVariants(connection, vocab);
-                            filtered.Add(vocab);
-                        }
-                    });
-                    task.Start();
-                    return task;
-                }).ToArray());
+                    VocabBuilder vocabBuilder = new VocabBuilder();
+                    VocabEntity vocab = vocabBuilder.BuildEntity(v, null);
+                    string value = string.IsNullOrEmpty(vocab.KanjiWriting) ?
+                        vocab.KanaWriting
+                        : vocab.KanjiWriting;
+                    if (isExplore && associatedVocabs.Contains(value))
+                        continue;
+                    IncludeCategories(connection, vocab);
+                    IncludeMeanings(connection, vocab);
+                    IncludeKanji(connection, srsConnection, vocab);
+                    IncludeSrsEntries(srsConnection, vocab);
+                    IncludeVariants(connection, vocab);
+                    yield return vocab;
+                }
 
-                filtered.Sort((v1, v2) => v1.WikipediaRank.GetValueOrDefault().CompareTo(v2.WikipediaRank));
+                //var filtered = new List<VocabEntity>();
+                //Task.WaitAll(vocabs.Select(v =>
+                //{
+                //    var task = new Task(() =>
+                //    {
+                //        VocabBuilder vocabBuilder = new VocabBuilder();
+                //        VocabEntity vocab = vocabBuilder.BuildEntity(v, null);
+                //        string value = string.IsNullOrEmpty(vocab.KanjiWriting) ?
+                //            vocab.KanaWriting
+                //            : vocab.KanjiWriting;
+                //        if (isExplore && associatedVocabs.Contains(value))
+                //            return;
+                //        IncludeCategories(connection, vocab);
+                //        IncludeMeanings(connection, vocab);
+                //        IncludeKanji(connection, srsConnection, vocab);
+                //        IncludeSrsEntries(srsConnection, vocab);
+                //        IncludeVariants(connection, vocab);
+                //        filtered.Add(vocab);
+                //    });
+                //    task.Start();
+                //    return task;
+                //}).ToArray());
 
-                foreach (var f in filtered)
-                    yield return f;
+                //filtered.Sort((v1, v2) => v1.WikipediaRank.GetValueOrDefault().CompareTo(v2.WikipediaRank));
+
+                //foreach (var f in filtered)
+                //    yield return f;
             }
             finally
             {
@@ -584,7 +591,7 @@ namespace Kanji.Database.Dao
         internal string BuildVocabFilterClauses(List<DaoParameter> parameters,
             KanjiEntity kanji,
             string readingFilter, string meaningFilter, VocabCategory categoryFilter,
-            int jlptLevel, int wkLevel)
+            int jlptLevel, int wkLevel, bool wikiOnly = false)
         {
             const int minJlptLevel = Levels.MinJlptLevel;
             const int maxJlptLevel = Levels.MaxJlptLevel;
@@ -719,6 +726,10 @@ namespace Kanji.Database.Dao
                 parameters.Add(new DaoParameter("@cat", categoryFilter.ID));
             }
 
+            var wikiFilter = string.Empty;
+            if (wikiOnly)
+                wikiFilter = string.Format("v.{0} NOTNULL ", SqlHelper.Field_Vocab_WikipediaRank);
+
             string[] sqlArgs =
             {
                 sqlSharedJoins,
@@ -729,7 +740,8 @@ namespace Kanji.Database.Dao
                 sqlKanjiFilter,
                 sqlReadingFilter,
                 sqlMeaningFilter,
-                sqlCategoryFilter
+                sqlCategoryFilter,
+                wikiFilter
             };
 
             bool isFiltered = false;
@@ -742,7 +754,8 @@ namespace Kanji.Database.Dao
                 sqlArgs[i] = (isFiltered ? "AND " : "WHERE ") + arg;
                 isFiltered = true;
             }
-
+            //test
+            var bla = string.Concat(sqlArgs);
             return string.Concat(sqlArgs);
         }
 

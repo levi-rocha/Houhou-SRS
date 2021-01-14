@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using GalaSoft.MvvmLight.Command;
 using Kanji.Common.Utility;
+using Kanji.Database.Dao;
 using Kanji.Interface.Actors;
 using Kanji.Interface.Business;
 using Kanji.Interface.Models;

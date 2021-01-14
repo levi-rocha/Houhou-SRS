@@ -40,10 +40,10 @@ namespace Kanji.Interface.Business
             VocabFilter filter = (VocabFilter)_currentFilter;
             if (Filter.IsEmpty())
             {
-                foreach (var vocab in _vocabDao.GetFilteredVocabPerformanceMode(filter.Kanji.FirstOrDefault(),
+                foreach (var vocab in _vocabDao.GetFilteredVocab(filter.Kanji.FirstOrDefault(),
                         filter.ReadingString, filter.MeaningString,
                         filter.Category, filter.JlptLevel, filter.WkLevel,
-                        filter.IsCommonFirst, filter.IsShortReadingFirst))
+                        filter.IsCommonFirst, filter.IsShortReadingFirst, true))
                     yield return vocab;
             }
             else 

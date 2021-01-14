@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Kanji.Database.Dao;
 using Kanji.Database.Entities;
 using Kanji.Database.Helpers;
 
@@ -17,6 +18,8 @@ namespace Kanji.Interface.Extensions
         /// <param name="k">Kanji to load.</param>
         public static void LoadFromKanji(this SrsEntry se, KanjiEntity k)
         {
+            var vocabs = new VocabDao().GetFilteredVocab(k, null, null, null, 6, 0, true, true, wikiOnly: true).Take(100).ToArray();
+
             // Compute the meaning string.
             string meaningString = string.Empty;
             foreach (KanjiMeaning km in k.Meanings)
@@ -30,9 +33,14 @@ namespace Kanji.Interface.Extensions
             // Compute the reading string.
             string readingString = (k.OnYomi
                 + MultiValueFieldHelper.ValueSeparator)
-                + k.KunYomi;
+                + string.Join(" ", k.KunYomi.Split(',').Select(kun => kun.Replace("-", "").Split('.').FirstOrDefault()));
             readingString = MultiValueFieldHelper.Expand(readingString
-                .Trim(new char[] { MultiValueFieldHelper.ValueSeparator }));
+                .Trim(new char[] { MultiValueFieldHelper.ValueSeparator })).Replace(", ", " ");
+            // speedrun - use only detected in vocab
+            var readings = readingString.Split(' ').Distinct();
+            var furiganas = vocabs.SelectMany(v => v.Furigana.Split(';').Where(f => f.Split(':').FirstOrDefault() == v.KanjiWriting.IndexOf(k.Character).ToString()).Select(f => f.Split(':').LastOrDefault())).GroupBy(f => f).Where(g => g.Count() > 1).Select(g => g.Key).Distinct();
+            readings = readings.Where(r => furiganas.Contains(r)).ToArray();
+            readingString = string.Join(" ", readings);
 
             // Set values.
             se.Meanings = meaningString;
