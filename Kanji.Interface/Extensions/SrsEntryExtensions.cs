@@ -18,7 +18,7 @@ namespace Kanji.Interface.Extensions
         /// <param name="k">Kanji to load.</param>
         public static void LoadFromKanji(this SrsEntry se, KanjiEntity k)
         {
-            var vocabs = new VocabDao().GetFilteredVocab(k, null, null, null, 6, 0, true, true, wikiOnly: true).Take(100).ToArray();
+            var vocabs = new VocabDao().GetFilteredVocab(k, null, null, null, 6, 0, true, true, wikiOnly: true).ToArray();
 
             // Compute the meaning string.
             string meaningString = string.Empty;
@@ -38,7 +38,7 @@ namespace Kanji.Interface.Extensions
                 .Trim(new char[] { MultiValueFieldHelper.ValueSeparator })).Replace(", ", " ");
             // speedrun - use only detected in vocab
             var readings = readingString.Split(' ').Distinct();
-            var furiganas = vocabs.SelectMany(v => v.Furigana.Split(';').Where(f => f.Split(':').FirstOrDefault() == v.KanjiWriting.IndexOf(k.Character).ToString()).Select(f => f.Split(':').LastOrDefault())).GroupBy(f => f).Where(g => g.Count() > 1).Select(g => g.Key).Distinct();
+            var furiganas = vocabs.SelectMany(v => v.Furigana.Split(';').Where(f => f.Split(':').FirstOrDefault() == v.KanjiWriting.IndexOf(k.Character).ToString()).Select(f => f.Split(':').LastOrDefault())).Distinct();
             readings = readings.Where(r => furiganas.Contains(r)).ToArray();
             readingString = string.Join(" ", readings);
 

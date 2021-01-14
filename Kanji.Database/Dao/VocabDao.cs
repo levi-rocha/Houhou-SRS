@@ -406,7 +406,7 @@ namespace Kanji.Database.Dao
         {
             List<DaoParameter> parameters = new List<DaoParameter>();
             string sqlFilterClauses = BuildVocabFilterClauses(parameters, kanji,
-                readingFilter, meaningFilter, categoryFilter, jlptLevel, wkLevel);
+                readingFilter, meaningFilter, categoryFilter, jlptLevel, wkLevel, wikiOnly);
 
             string sortClause = "ORDER BY ";
             if (isExplore)
