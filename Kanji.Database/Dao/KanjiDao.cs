@@ -143,10 +143,20 @@ namespace Kanji.Database.Dao
                     SqlHelper.Field_Kanji_MostUsedRank),
                 parameters.ToArray());
 
+                string[] associatedKanji = new string[] { };
+                if (textFilter == "!d")
+                {
+                    associatedKanji = new SrsEntryDao().GetFilteredItems(new FilterClause[] { }).Select(e => e.AssociatedKanji).Where(e => e != null).Distinct().ToArray();
+                }
+
                 KanjiBuilder kanjiBuilder = new KanjiBuilder();
                 foreach (NameValueCollection nvcKanji in results)
                 {
                     KanjiEntity kanji = kanjiBuilder.BuildEntity(nvcKanji, null);
+                    if (textFilter == "!d" && associatedKanji.Contains(kanji.Character))
+                    {
+                        continue;
+                    }
                     IncludeKanjiMeanings(connection, kanji);
                     IncludeRadicals(connection, kanji);
                     IncludeSrsEntries(srsConnection, kanji);
@@ -328,6 +338,9 @@ namespace Kanji.Database.Dao
             string sqlTextFilter = string.Empty;
             if (!string.IsNullOrWhiteSpace(textFilter))
             {
+                //special discover command
+                if (textFilter != "!d")
+                { 
                 // Build the text filter.
                 // Example with textFilter="年生まれ" :
                 // 
@@ -338,6 +351,7 @@ namespace Kanji.Database.Dao
 
                 // And add the parameter.
                 parameters.Add(new DaoParameter("@textFilter", textFilter));
+                }
             }
 
             string sqlAnyReadingFilter = string.Empty;
@@ -495,7 +509,7 @@ namespace Kanji.Database.Dao
                 // And add the parameter.
                 parameters.Add(new DaoParameter("@meaningFilter", "%" + meaningFilter + "%"));
             }
-            
+
             string[] sqlArgs =
             {
                 sqlJlptFilter,
