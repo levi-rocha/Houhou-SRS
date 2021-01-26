@@ -402,11 +402,11 @@ namespace Kanji.Database.Dao
         public IEnumerable<VocabEntity> GetFilteredVocab(KanjiEntity kanji,
             string readingFilter, string meaningFilter, VocabCategory categoryFilter,
             int jlptLevel, int wkLevel,
-            bool isCommonFirst, bool isShortWritingFirst, bool isExplore = false, bool wikiOnly = false)
+            bool isCommonFirst, bool isShortWritingFirst, bool isExplore = false, bool wikiOnly = false, bool commonOnly = false)
         {
             List<DaoParameter> parameters = new List<DaoParameter>();
             string sqlFilterClauses = BuildVocabFilterClauses(parameters, kanji,
-                readingFilter, meaningFilter, categoryFilter, jlptLevel, wkLevel, wikiOnly);
+                readingFilter, meaningFilter, categoryFilter, jlptLevel, wkLevel, wikiOnly, commonOnly);
 
             string sortClause = "ORDER BY ";
             if (isExplore)
@@ -591,7 +591,7 @@ namespace Kanji.Database.Dao
         internal string BuildVocabFilterClauses(List<DaoParameter> parameters,
             KanjiEntity kanji,
             string readingFilter, string meaningFilter, VocabCategory categoryFilter,
-            int jlptLevel, int wkLevel, bool wikiOnly = false)
+            int jlptLevel, int wkLevel, bool wikiOnly = false, bool commonOnly = false)
         {
             const int minJlptLevel = Levels.MinJlptLevel;
             const int maxJlptLevel = Levels.MaxJlptLevel;
@@ -730,6 +730,14 @@ namespace Kanji.Database.Dao
             if (wikiOnly)
                 wikiFilter = string.Format("v.{0} NOTNULL ", SqlHelper.Field_Vocab_WikipediaRank);
 
+            var commonFilter = string.Empty;
+            var mainFilter = string.Empty;
+            if (commonOnly)
+            { 
+                commonFilter = string.Format("v.{0}=1 ", SqlHelper.Field_Vocab_IsCommon);
+                mainFilter = string.Format("v.{0}=1 ", SqlHelper.Field_Vocab_IsMain);
+            }
+
             string[] sqlArgs =
             {
                 sqlSharedJoins,
@@ -741,7 +749,9 @@ namespace Kanji.Database.Dao
                 sqlReadingFilter,
                 sqlMeaningFilter,
                 sqlCategoryFilter,
-                wikiFilter
+                wikiFilter,
+                commonFilter,
+                mainFilter
             };
 
             bool isFiltered = false;

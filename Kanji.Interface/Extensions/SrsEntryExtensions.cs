@@ -18,7 +18,7 @@ namespace Kanji.Interface.Extensions
         /// <param name="k">Kanji to load.</param>
         public static void LoadFromKanji(this SrsEntry se, KanjiEntity k)
         {
-            var vocabs = new VocabDao().GetFilteredVocab(k, null, null, null, 6, 0, true, true, wikiOnly: true).ToArray();
+            var vocabs = new VocabDao().GetFilteredVocab(k, null, null, null, 6, 0, true, true, wikiOnly: true, commonOnly: true).ToArray();
 
             // Compute the meaning string.
             string meaningString = string.Empty;
