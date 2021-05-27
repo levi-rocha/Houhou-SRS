@@ -31,20 +31,15 @@ namespace Kanji.Interface.Extensions
             meaningString = MultiValueFieldHelper.Expand(meaningString);
 
             // Compute the reading string.
-            string readingString = (k.OnYomi
-                + MultiValueFieldHelper.ValueSeparator)
-                + string.Join(" ", k.KunYomi.Split(',').Select(kun => kun.Replace("-", "").Split('.').FirstOrDefault()));
-            readingString = MultiValueFieldHelper.Expand(readingString
-                .Trim(new char[] { MultiValueFieldHelper.ValueSeparator })).Replace(", ", " ");
-            // speedrun - use only detected in vocab
-            var readings = readingString.Split(' ').Distinct();
-            var furiganas = vocabs.SelectMany(v => v.Furigana.Split(';').Where(f => f.Split(':').FirstOrDefault() == v.KanjiWriting.IndexOf(k.Character).ToString()).Select(f => f.Split(':').LastOrDefault())).Distinct();
-            readings = readings.Where(r => furiganas.Contains(r)).ToArray();
-            readingString = string.Join(" ", readings);
+            string readingString = k.OnYomi;
+            // speedrun2 - use reading that shows up the most
+            var readings = readingString.Split(',').Distinct();
+            var furiganas = vocabs.SelectMany(v => v.Furigana.Split(';').Where(f => f.Split(':').FirstOrDefault() == v.KanjiWriting.IndexOf(k.Character).ToString()).Select(f => f.Split(':').LastOrDefault())).GroupBy(v => v).OrderByDescending(g => g.Count()).Select(g => g.Key);
+            var mostUsed = furiganas.FirstOrDefault(f => readings.Contains(f)) ?? furiganas.FirstOrDefault();
 
             // Set values.
             se.Meanings = meaningString;
-            se.Readings = readingString;
+            se.Readings = mostUsed;
             se.AssociatedKanji = k.Character;
         }
 

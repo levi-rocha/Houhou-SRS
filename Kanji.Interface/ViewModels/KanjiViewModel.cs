@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Data;
-using GalaSoft.MvvmLight.Command;
+﻿using GalaSoft.MvvmLight.Command;
 using Kanji.Common.Utility;
-using Kanji.Database.Dao;
+using Kanji.Database.Entities;
 using Kanji.Interface.Actors;
-using Kanji.Interface.Business;
+using Kanji.Interface.Extensions;
 using Kanji.Interface.Models;
 using Kanji.Interface.Utilities;
-using Kanji.Interface.Views;
+using System;
+using System.Linq;
 
 namespace Kanji.Interface.ViewModels
 {
@@ -77,9 +70,10 @@ namespace Kanji.Interface.ViewModels
         public RelayCommand ClearSelectedKanjiCommand { get; set; }
 
         public RelayCommand ClearFilterCommand { get; set; }
+        public RelayCommand Add5Command { get; set; }
 
         public RelayCommand NavigateBackCommand { get; set; }
-        
+
         /// <summary>
         /// Command used apply the filter.
         /// </summary>
@@ -97,6 +91,7 @@ namespace Kanji.Interface.ViewModels
             NavigationActor.Instance.KanjiVm = this;
 
             _kanjiFilter = new KanjiFilter();
+            _kanjiFilter.TextFilter = "!d";
             KanjiFilterVm = new KanjiFilterViewModel(_kanjiFilter);
             KanjiListVm = new KanjiListViewModel(_kanjiFilter);
 
@@ -105,7 +100,8 @@ namespace Kanji.Interface.ViewModels
 
             ClearSelectedKanjiCommand = new RelayCommand(OnClearSelectedKanji);
             ClearFilterCommand = new RelayCommand(OnClearFilter);
-	        ApplyFilterCommand = new RelayCommand(OnApplyFilter);
+            Add5Command = new RelayCommand(OnAdd5);
+            ApplyFilterCommand = new RelayCommand(OnApplyFilter);
             NavigateBackCommand = new RelayCommand(OnNavigateBack);
 
             _navigationHistory = new FixedSizeStack<KanjiNavigationEntry>(
@@ -274,6 +270,22 @@ namespace Kanji.Interface.ViewModels
         private void OnClearFilter()
         {
             KanjiFilterVm.ClearFilter();
+        }
+
+        private void OnAdd5()
+        {
+            var toadd = KanjiListVm.LoadedItems.Take(5);
+            foreach (var kanji in toadd)
+                AddToSrs(kanji);
+            KanjiFilterVm.ApplyFilter();
+        }
+
+        private void AddToSrs(ExtendedKanji kanjiEntity)
+        {
+            SrsEntry entry = new SrsEntry();
+            entry.LoadFromKanji(kanjiEntity.DbKanji);
+            var vm = new SrsEntryViewModel(entry);
+            vm.SendEntity(SrsEntryViewModel.SrsEntryOperationEnum.Add);
         }
 
         /// <summary>

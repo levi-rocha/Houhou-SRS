@@ -22,7 +22,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-            
+
                 <!-- Filter control panel -->
                 <controls:KanjiFilterControl x:Name="KanjiFilterControl" DataContext="{Binding KanjiFilterVm}">
                     <controls:KanjiFilterControl.Style>
@@ -82,22 +82,35 @@
                                 </Style>
                             </Button.Style>
                         </Button>
+                        <Button x:Name="Add5" Content="Add next 5"
+                            Command="{Binding Add5Command}" Margin="0,0,0,5">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ActionButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Visibility, ElementName=CloseKanjiPageButton}"
+                                            Value="Visible">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button x:Name="ClearFilterButton" Content="Clear all filters" ToolTip="(CTRL+Shift+C)"
                                 Command="{Binding ClearFilterCommand}" Margin="0,0,0,5">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding KanjiFilterVm.Radicals}" Value="{x:Null}">
-                                                <Setter Property="IsEnabled" Value="False" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ElementName=CloseKanjiPageButton, Path=Visibility}"
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding KanjiFilterVm.Radicals}" Value="{x:Null}">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ElementName=CloseKanjiPageButton, Path=Visibility}"
                                                 Value="Visible">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
                         <Button Content="Navigate back" Command="{Binding NavigateBackCommand}" Margin="0,0,0,5">
                             <Button.Style>

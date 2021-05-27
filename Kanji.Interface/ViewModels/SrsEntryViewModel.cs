@@ -21,7 +21,7 @@ namespace Kanji.Interface.ViewModels
     {
         #region Internal enum
 
-        private enum SrsEntryOperationEnum
+        public enum SrsEntryOperationEnum
         {
             Add = 0,
             Update = 1,
@@ -386,7 +386,7 @@ namespace Kanji.Interface.ViewModels
         /// </summary>
         /// <param name="operationType">Operation to execute on the SRS
         /// item.</param>
-        private void SendEntity(SrsEntryOperationEnum operationType)
+        public void SendEntity(SrsEntryOperationEnum operationType)
         {
             BackgroundWorker sendEntityWorker = new BackgroundWorker();
             sendEntityWorker.DoWork += DoSendEntity;
