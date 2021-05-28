@@ -82,7 +82,7 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                        <Button x:Name="Add5" Content="Add next 5"
+                        <Button x:Name="Add5" Content="Add next (up to 120)"
                             Command="{Binding Add5Command}" Margin="0,0,0,5">
                             <Button.Style>
                                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ActionButton}">

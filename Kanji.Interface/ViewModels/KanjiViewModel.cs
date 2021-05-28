@@ -2,10 +2,12 @@
 using Kanji.Common.Utility;
 using Kanji.Database.Entities;
 using Kanji.Interface.Actors;
+using Kanji.Interface.Business;
 using Kanji.Interface.Extensions;
 using Kanji.Interface.Models;
 using Kanji.Interface.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Kanji.Interface.ViewModels
@@ -274,8 +276,16 @@ namespace Kanji.Interface.ViewModels
 
         private void OnAdd5()
         {
-            var toadd = KanjiListVm.LoadedItems.Take(5);
-            foreach (var kanji in toadd)
+            var numberToAdd = 120 - (int)SrsBusiness.Instance.CurrentReviewInfo.AvailableReviewsCount;
+            if (numberToAdd <= 0)
+                return;
+            var toAdd = new List<ExtendedKanji>();
+            while (toAdd.Count < numberToAdd)
+            { 
+                var kanjiToAdd = KanjiListVm.LoadedItems.Take(numberToAdd - toAdd.Count);
+                toAdd.AddRange(kanjiToAdd);
+            }
+            foreach (var kanji in toAdd)
                 AddToSrs(kanji);
             KanjiFilterVm.ApplyFilter();
         }
@@ -284,6 +294,7 @@ namespace Kanji.Interface.ViewModels
         {
             SrsEntry entry = new SrsEntry();
             entry.LoadFromKanji(kanjiEntity.DbKanji);
+            entry.NextAnswerDate = DateTime.Now;
             var vm = new SrsEntryViewModel(entry);
             vm.SendEntity(SrsEntryViewModel.SrsEntryOperationEnum.Add);
         }
