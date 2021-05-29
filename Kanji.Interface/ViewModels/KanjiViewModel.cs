@@ -279,13 +279,8 @@ namespace Kanji.Interface.ViewModels
             var numberToAdd = 120 - (int)SrsBusiness.Instance.CurrentReviewInfo.AvailableReviewsCount;
             if (numberToAdd <= 0)
                 return;
-            var toAdd = new List<ExtendedKanji>();
-            while (toAdd.Count < numberToAdd)
-            { 
-                var kanjiToAdd = KanjiListVm.LoadedItems.Take(numberToAdd - toAdd.Count);
-                toAdd.AddRange(kanjiToAdd);
-            }
-            foreach (var kanji in toAdd)
+            var kanjiToAdd = KanjiListVm.LoadedItems.Take(numberToAdd).ToArray();
+            foreach (var kanji in kanjiToAdd)
                 AddToSrs(kanji);
             KanjiFilterVm.ApplyFilter();
         }

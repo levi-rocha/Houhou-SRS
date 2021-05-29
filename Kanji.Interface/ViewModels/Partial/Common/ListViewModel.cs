@@ -285,7 +285,7 @@ namespace Kanji.Interface.ViewModels
         /// Background task work method.
         /// Retrieves the next bunch of items.
         /// </summary>
-        private void DoLoadMore(object sender, DoWorkEventArgs e)
+        public void DoLoadMore(object sender, DoWorkEventArgs e)
         {
             if (TotalItemCount > _loadedItems.Count)
             {
